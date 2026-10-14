@@ -1,0 +1,31 @@
+name: smart_canteen
+description: "Inclusive Canteen App Prototype"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # Стандартные иконки
+  cupertino_icons: ^1.0.6
+  # Распознавание речи
+  speech_to_text: ^7.3.0
+  # Разрешения для микрофона
+  permission_handler: ^12.0.1
+  flutter_tts: ^4.2.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/   
+  # Если в будущем захочешь добавить локальные картинки, раскомментируй это:
+  # assets:
+  #   - assets/images/
