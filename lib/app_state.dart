@@ -22,8 +22,60 @@ class Dish {
   });
 }
 
+class CartItem {
+  final Dish dish;
+  int quantity;
+
+  CartItem({
+    required this.dish,
+    this.quantity = 1,
+  });
+}
+
 // Глобальная корзина
-final ValueNotifier<List<Dish>> cartNotifier = ValueNotifier([]);
+final ValueNotifier<List<CartItem>> cartNotifier = ValueNotifier([]);
+
+void addToCart(Dish dish) {
+  final current = List<CartItem>.from(cartNotifier.value);
+  final index = current.indexWhere((item) => item.dish.id == dish.id);
+  if (index != -1) {
+    current[index] = CartItem(
+      dish: current[index].dish,
+      quantity: current[index].quantity + 1,
+    );
+  } else {
+    current.add(CartItem(dish: dish, quantity: 1));
+  }
+  cartNotifier.value = current;
+}
+
+void removeFromCart(Dish dish) {
+  final current = List<CartItem>.from(cartNotifier.value);
+  final index = current.indexWhere((item) => item.dish.id == dish.id);
+  if (index != -1) {
+    if (current[index].quantity > 1) {
+      current[index] = CartItem(
+        dish: current[index].dish,
+        quantity: current[index].quantity - 1,
+      );
+    } else {
+      current.removeAt(index);
+    }
+    cartNotifier.value = current;
+  }
+}
+
+void removeCartItemAt(int index) {
+  final current = List<CartItem>.from(cartNotifier.value);
+  if (index >= 0 && index < current.length) {
+    current.removeAt(index);
+    cartNotifier.value = current;
+  }
+}
+
+void clearCart() {
+  cartNotifier.value = [];
+}
 
 // Список всех блюд с реалистичными ценами для Казахстана
 final List<Dish> allDishes = [

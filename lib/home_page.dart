@@ -79,6 +79,17 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
+  bool _isVoiceDialogOpen = false;
+
+  void _closeVoiceDialogIfOpen() {
+    if (_isVoiceDialogOpen) {
+      _isVoiceDialogOpen = false;
+      if (mounted && Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+    }
+  }
+
   // ==========================================================
   // СУПЕР-УМНЫЙ ПОИСК КАТЕГОРИЙ (Ищет по корням и опечаткам)
   // ==========================================================
@@ -92,26 +103,24 @@ class _HomePageState extends State<HomePage> {
     return null;
   }
 
+  Dish? _findMatchingDish(String lowerText) {
+    for (final dish in allDishes) {
+      final dishName = dish.name.toLowerCase();
+      if (lowerText.contains(dishName)) return dish;
+
+      final words = dishName.split(' ').where((w) => w.length > 3);
+      for (var word in words) {
+        if (lowerText.contains(word)) return dish;
+      }
+    }
+    return null;
+  }
+
   bool _isTriggerWordInText(String text) {
     if (text.trim().isEmpty) return false;
     final lowerText = text.toLowerCase();
     
-    // Сначала ищем конкретные блюда
-    try {
-      allDishes.firstWhere((dish) {
-        final dishName = dish.name.toLowerCase();
-        if (lowerText.contains(dishName)) return true;
-        
-        final words = dishName.split(' ').where((w) => w.length > 3);
-        for (var word in words) {
-          if (lowerText.contains(word)) return true;
-        }
-        return false;
-      });
-      return true; 
-    } catch (e) {} 
-
-    // Если блюдо не нашли, ищем хотя бы категорию
+    if (_findMatchingDish(lowerText) != null) return true;
     if (_getMatchedCategory(lowerText) != null) return true;
     
     return false;
@@ -188,32 +197,15 @@ class _HomePageState extends State<HomePage> {
   void _handleVoiceResult(String text) {
     if (!mounted) return;
 
-    if (Navigator.of(context).canPop()) {
-      Navigator.of(context).pop(); 
-    }
+    _closeVoiceDialogIfOpen();
     
     if (text.trim().isEmpty) return; 
 
     final lowerText = text.toLowerCase();
-    
-    Dish? matchingDish;
-    try {
-      matchingDish = allDishes.firstWhere((dish) {
-        final dishName = dish.name.toLowerCase();
-        if (lowerText.contains(dishName)) return true;
-        
-        final words = dishName.split(' ').where((w) => w.length > 3);
-        for (var word in words) {
-          if (lowerText.contains(word)) return true;
-        }
-        return false;
-      });
-    } catch (e) {
-      matchingDish = null;
-    }
+    final matchingDish = _findMatchingDish(lowerText);
     
     if (matchingDish != null) {
-      cartNotifier.value = List.from(cartNotifier.value)..add(matchingDish);
+      addToCart(matchingDish);
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -256,6 +248,7 @@ class _HomePageState extends State<HomePage> {
     _recognizedText = '';
     _isHandlingVoice = false;
     _isListening = false; 
+    _isVoiceDialogOpen = true;
     
     _startListening();
     
@@ -294,11 +287,10 @@ class _HomePageState extends State<HomePage> {
                     ElevatedButton.icon(
                       onPressed: () {
                         _stopListening();
+                        _closeVoiceDialogIfOpen();
                         if (_recognizedText.isNotEmpty && !_isHandlingVoice) {
                           _isHandlingVoice = true; 
                           _handleVoiceResult(_recognizedText);
-                        } else if (_recognizedText.isEmpty) {
-                          Navigator.pop(context);
                         }
                       },
                       icon: const Icon(Icons.check),
@@ -311,7 +303,7 @@ class _HomePageState extends State<HomePage> {
                     ElevatedButton.icon(
                       onPressed: () {
                          _stopListening();
-                         Navigator.pop(context);
+                         _closeVoiceDialogIfOpen();
                       },
                       icon: const Icon(Icons.close),
                       label: const Text('Отмена'),
@@ -366,9 +358,18 @@ class _HomePageState extends State<HomePage> {
                 itemBuilder: (context, index) {
                   return Container(
                     margin: const EdgeInsets.all(16),
+                    clipBehavior: Clip.antiAlias,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(16),
-                      image: DecorationImage(image: NetworkImage(_carouselImages[index]), fit: BoxFit.cover),
+                    ),
+                    child: Image.network(
+                      _carouselImages[index],
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        color: Colors.orange.shade100,
+                        alignment: Alignment.center,
+                        child: const Icon(Icons.restaurant, size: 48, color: Colors.orange),
+                      ),
                     ),
                   );
                 },
@@ -420,7 +421,16 @@ class _HomePageState extends State<HomePage> {
                         Expanded(
                           child: ClipRRect(
                             borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                            child: Image.network(dish.imageUrl, fit: BoxFit.cover, width: double.infinity),
+                            child: Image.network(
+                              dish.imageUrl, 
+                              fit: BoxFit.cover, 
+                              width: double.infinity,
+                              errorBuilder: (context, error, stackTrace) => Container(
+                                color: Colors.grey.shade200,
+                                alignment: Alignment.center,
+                                child: Icon(dish.icon, size: 48, color: Colors.orange),
+                              ),
+                            ),
                           ),
                         ),
                         Padding(

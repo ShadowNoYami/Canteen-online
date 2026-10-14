@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Task 1</string>
+	<string>Canteen Online</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -47,5 +47,7 @@
 	<true/>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Это приложение нуждается в доступе к микрофону для распознавания речи</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Это приложение использует распознавание речи для голосового поиска блюд и навигации</string>
 </dict>
 </plist>

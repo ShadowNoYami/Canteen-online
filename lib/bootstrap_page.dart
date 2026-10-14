@@ -12,6 +12,7 @@ class BootstrapPage extends StatefulWidget {
 class _BootstrapPageState extends State<BootstrapPage> with SingleTickerProviderStateMixin {
   late AnimationController _animController;
   late Animation<double> _fadeAnimation;
+  Timer? _navigationTimer;
 
   @override
   void initState() {
@@ -26,7 +27,7 @@ class _BootstrapPageState extends State<BootstrapPage> with SingleTickerProvider
     _animController.forward();
 
     // Через 2.5 секунды переключаемся на LoginPage
-    Timer(const Duration(milliseconds: 2500), () {
+    _navigationTimer = Timer(const Duration(milliseconds: 2500), () {
       if (mounted) {
         Navigator.pushReplacement(
           context, 
@@ -38,6 +39,7 @@ class _BootstrapPageState extends State<BootstrapPage> with SingleTickerProvider
 
   @override
   void dispose() {
+    _navigationTimer?.cancel();
     _animController.dispose();
     super.dispose();
   }

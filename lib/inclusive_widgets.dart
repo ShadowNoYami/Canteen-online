@@ -28,6 +28,8 @@ class InclusiveAppBar extends StatelessWidget implements PreferredSizeWidget {
     await globalTts.setSpeechRate(0.65); 
     await globalTts.setPitch(1.0); 
 
+    if (!context.mounted) return;
+
     if (isEnabled) {
       ScaffoldMessenger.of(context).showSnackBar(
          const SnackBar(content: Text('Голосовой режим ВКЛЮЧЕН'), backgroundColor: Colors.green, duration: Duration(seconds: 1))
@@ -39,7 +41,8 @@ class InclusiveAppBar extends StatelessWidget implements PreferredSizeWidget {
         await globalTts.speak("Голосовой режим включен. Экран: $title.");
       }
     } else {
-      globalTts.stop(); 
+      await globalTts.stop(); 
+      if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
          const SnackBar(content: Text('Голосовой режим ВЫКЛЮЧЕН'), backgroundColor: Colors.grey, duration: Duration(seconds: 1))
       );
@@ -53,14 +56,14 @@ class InclusiveAppBar extends StatelessWidget implements PreferredSizeWidget {
       valueListenable: autoVoiceNotifier,
       builder: (context, isVoiceEnabled, child) {
         return AppBar(
-          // ВЕРНУЛИ ЛОГОТИП ИЗ ПАПКИ ASSETS!
           leading: showBackButton 
               ? IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Navigator.pop(context))
               : Padding(
-                  padding: const EdgeInsets.all(8.0), // Отступы, чтобы логотип не прилипал к краям
+                  padding: const EdgeInsets.all(8.0),
                   child: Image.asset(
-                    'assets/logo.png', // <-- ВНИМАНИЕ: Если твой файл называется иначе, поменяй тут!
+                    'assets/logo.png',
                     fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) => const Icon(Icons.restaurant, color: Colors.orange),
                   ),
                 ),
           title: Text(title),

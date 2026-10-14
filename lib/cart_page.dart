@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'inclusive_widgets.dart';
 import 'app_state.dart';
+import 'main_navigation.dart';
 
 class CartPage extends StatefulWidget {
   const CartPage({super.key});
@@ -16,7 +17,7 @@ class _CartPageState extends State<CartPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: const InclusiveAppBar(title: 'Мой заказ'),
-      body: ValueListenableBuilder<List<Dish>>(
+      body: ValueListenableBuilder<List<CartItem>>(
         valueListenable: cartNotifier,
         builder: (context, cartItems, child) {
           if (cartItems.isEmpty) {
@@ -32,7 +33,7 @@ class _CartPageState extends State<CartPage> {
             );
           }
 
-          int total = cartItems.fold(0, (sum, item) => sum + item.price);
+          int total = cartItems.fold(0, (sum, item) => sum + (item.dish.price * item.quantity));
 
           return Column(
             children: [
@@ -45,18 +46,70 @@ class _CartPageState extends State<CartPage> {
                     return Card(
                       margin: const EdgeInsets.only(bottom: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                      child: ListTile(
-                        leading: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.network(item.imageUrl, width: 50, height: 50, fit: BoxFit.cover),
-                        ),
-                        title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: Text('${item.price} ₸'),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.remove_circle_outline, color: Colors.red),
-                          onPressed: () {
-                            cartNotifier.value = List.from(cartNotifier.value)..removeAt(index);
-                          },
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(
+                                item.dish.imageUrl,
+                                width: 60,
+                                height: 60,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => Container(
+                                  width: 60,
+                                  height: 60,
+                                  color: Colors.grey.shade200,
+                                  child: Icon(item.dish.icon, color: Colors.orange),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    item.dish.name,
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '${item.dish.price} ₸ x ${item.quantity} = ${item.dish.price * item.quantity} ₸',
+                                    style: TextStyle(
+                                      color: Colors.orange.shade800,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.remove_circle_outline, color: Colors.orange),
+                                  onPressed: () => removeFromCart(item.dish),
+                                ),
+                                Text(
+                                  '${item.quantity}',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.add_circle_outline, color: Colors.green),
+                                  onPressed: () => addToCart(item.dish),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                  onPressed: () => removeCartItemAt(index),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                     );
@@ -86,12 +139,16 @@ class _CartPageState extends State<CartPage> {
                     
                     // Выбор времени
                     DropdownButtonFormField<String>(
-                      value: selectedTime,
+                      initialValue: selectedTime,
                       decoration: InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
                       items: ['12:15', '12:30 (Перерыв)', '13:00', '13:45'].map((time) {
                         return DropdownMenuItem(value: time, child: Text(time));
                       }).toList(),
-                      onChanged: (val) => setState(() => selectedTime = val!),
+                      onChanged: (val) {
+                        if (val != null) {
+                          setState(() => selectedTime = val);
+                        }
+                      },
                     ),
                     
                     const SizedBox(height: 20),
@@ -99,7 +156,7 @@ class _CartPageState extends State<CartPage> {
                     // Кнопка Заказать
                     ElevatedButton(
                       onPressed: () {
-                        cartNotifier.value = []; // Чистим корзину
+                        clearCart(); // Чистим корзину
                         Navigator.push(context, MaterialPageRoute(builder: (_) => SuccessScreen(time: selectedTime)));
                       },
                       style: ElevatedButton.styleFrom(
@@ -130,7 +187,7 @@ class SuccessScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.orange,
       body: Center(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
           child: Container(
             padding: const EdgeInsets.all(32),
@@ -157,9 +214,12 @@ class SuccessScreen extends StatelessWidget {
                 const Text('Покажи этот QR-код на зоне выдачи', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
                 const SizedBox(height: 24),
                 TextButton(
-                  // Возвращает на самый первый экран в стеке (в меню)
-                  onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst),
-                  child: const Text('Вернуться в меню', style: TextStyle(fontSize: 18, color: Colors.orange)),
+                  // Возвращает в меню и переключает на первую вкладку
+                  onPressed: () {
+                    MainNavigation.switchToHome(context);
+                    Navigator.of(context).popUntil((route) => route.isFirst);
+                  },
+                  child: const Text('Вернуться в меню', style: TextStyle(fontSize: 18, color: Colors.orange, fontWeight: FontWeight.bold)),
                 )
               ],
             ),

@@ -67,7 +67,13 @@ class _DetailsPageState extends State<DetailsPage> {
                   widget.dish.imageUrl, 
                   height: 300, 
                   width: double.infinity, 
-                  fit: BoxFit.cover
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    height: 300,
+                    color: Colors.grey.shade200,
+                    alignment: Alignment.center,
+                    child: Icon(widget.dish.icon, size: 80, color: Colors.orange),
+                  ),
                 ),
                 Positioned(
                   bottom: 20,
@@ -149,7 +155,7 @@ class _DetailsPageState extends State<DetailsPage> {
                   
                   ElevatedButton.icon(
                     onPressed: () {
-                      cartNotifier.value = List.from(cartNotifier.value)..add(widget.dish);
+                      addToCart(widget.dish);
                       
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(

@@ -43,7 +43,15 @@ class HomeTypesPage extends StatelessWidget {
                       Expanded(
                         child: ClipRRect(
                           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                          child: Image.network(dish.imageUrl, fit: BoxFit.cover),
+                          child: Image.network(
+                            dish.imageUrl, 
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Container(
+                              color: Colors.grey.shade200,
+                              alignment: Alignment.center,
+                              child: Icon(dish.icon, size: 48, color: Colors.orange),
+                            ),
+                          ),
                         ),
                       ),
                       Padding(

@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import 'home_page.dart';
-import 'cart_page.dart'; // Обязательно подключаем нашу рабочую корзину
+import 'cart_page.dart';
 
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
+
+  static _MainNavigationState? _instance;
+
+  static void switchToHome(BuildContext context) {
+    _instance?.setTab(0);
+  }
 
   @override
   State<MainNavigation> createState() => _MainNavigationState();
@@ -11,20 +17,42 @@ class MainNavigation extends StatefulWidget {
 
 class _MainNavigationState extends State<MainNavigation> {
   int _currentIndex = 0; 
-  
-  // Теперь здесь настоящая главная страница и настоящая корзина
-  final List<Widget> _pages = [
-    const HomePage(), 
-    const CartPage()
+
+  @override
+  void initState() {
+    super.initState();
+    MainNavigation._instance = this;
+  }
+
+  void setTab(int index) {
+    if (mounted) {
+      setState(() => _currentIndex = index);
+    }
+  }
+
+  @override
+  void dispose() {
+    if (MainNavigation._instance == this) {
+      MainNavigation._instance = null;
+    }
+    super.dispose();
+  }
+
+  final List<Widget> _pages = const [
+    HomePage(), 
+    CartPage(),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages[_currentIndex],
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _pages,
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
+        onTap: setTab,
         selectedItemColor: Colors.orange,
         unselectedItemColor: Colors.grey,
         showSelectedLabels: true,
